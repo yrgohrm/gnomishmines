@@ -93,5 +93,24 @@ When you add or change rooms, exits, items, inhabitants or monsters in `GnomishM
 
 ## Git
 
+We use [GitHub Flow](https://docs.github.com/en/get-started/using-github/github-flow). Load the
+`github-flow` skill (in `.claude/skills/` and `.agents/skills/`) before any branching, pushing or
+pull request work, and follow it.
+
+- `main` must always build and pass `mvn verify`. Never commit directly to `main`.
+- Start each change from an up-to-date `main` on a short-lived branch with a descriptive name,
+  e.g. `add-lantern-item` or `fix-parser-filler-words`:
+
+  ```
+  git switch main
+  git pull origin main
+  git switch -c <descriptive-name>
+  ```
+
 - Keep commits small and focused, with imperative subject lines ("Add lantern item").
-- Never commit `target/` or IDE files. Run `mvn verify` before committing.
+- Run `mvn verify` before every commit and push.
+- Push the branch early and often (`git push -u origin <branch>`), and open a pull request
+  against `main` when the change is ready for review. Use a draft pull request for early feedback.
+- Merge only after review and a passing `mvn verify`. Prefer squash and merge, then delete the
+  branch.
+- Never commit `target/` or IDE files.
