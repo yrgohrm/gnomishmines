@@ -22,7 +22,15 @@ public final class Main {
 
   public static void main(String[] args) throws IOException {
     PrintStream out = new PrintStream(System.out, true, StandardCharsets.UTF_8);
-    Game game = new Game(GnomishMines.create(), diceFrom(args));
+    Dice dice;
+    try {
+      dice = diceFrom(args);
+    } catch (IllegalArgumentException e) {
+      new PrintStream(System.err, true, StandardCharsets.UTF_8).println(e.getMessage());
+      System.exit(2);
+      return;
+    }
+    Game game = new Game(GnomishMines.create(), dice);
     BufferedReader in =
         new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
 
@@ -38,13 +46,24 @@ public final class Main {
     }
   }
 
+  static final String USAGE = "Usage: gnomish-mines [--seed <number>]";
+
+  /**
+   * Creates the dice from the command line arguments.
+   *
+   * @throws IllegalArgumentException with the usage text if the arguments are invalid
+   */
   static Dice diceFrom(String[] args) {
+    if (args.length == 0) {
+      return new RandomDice();
+    }
     if (args.length == 2 && args[0].equals("--seed")) {
-      return new RandomDice(Long.parseLong(args[1]));
+      try {
+        return new RandomDice(Long.parseLong(args[1]));
+      } catch (NumberFormatException e) {
+        throw new IllegalArgumentException(USAGE, e);
+      }
     }
-    if (args.length != 0) {
-      throw new IllegalArgumentException("Usage: gnomish-mines [--seed <number>]");
-    }
-    return new RandomDice();
+    throw new IllegalArgumentException(USAGE);
   }
 }
