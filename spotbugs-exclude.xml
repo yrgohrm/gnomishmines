@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SpotBugs exclusions. Keep this list short and justify every entry.
+  See https://spotbugs.readthedocs.io/en/stable/filter.html
+-->
+<FindBugsFilter
+    xmlns="https://github.com/spotbugs/filter/3.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
+
+  <!--
+    Rooms form a shared, mutable graph: exits, the player and the world must all point at the
+    very same Room objects, so they cannot be defensively copied. Only Room-typed fields are
+    excluded; exposing any other mutable state is still reported.
+  -->
+  <Match>
+    <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    <Field type="se.yrgo.gnomish.model.Room"/>
+  </Match>
+</FindBugsFilter>
