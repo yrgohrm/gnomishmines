@@ -14,8 +14,6 @@ than features or performance.
 | Task                         | Command                          |
 | ---------------------------- | -------------------------------- |
 | Full build (definition of done) | `mvn verify`                  |
-| Run tests only               | `mvn test`                       |
-| Run a single test class      | `mvn test -Dtest=GameTest`       |
 | Fix formatting               | `mvn spotless:apply`             |
 | Explore SpotBugs findings    | `mvn spotbugs:gui`               |
 | Play the game                | `java -jar target/gnomish-mines-1.0.0-SNAPSHOT.jar [--seed N]` |
@@ -35,22 +33,9 @@ narrow as possible, and add an XML comment explaining why.
 
 ## Architecture
 
-```
-se.yrgo.gnomish
-  Main                 Terminal entry point. The only class that reads stdin or writes stdout.
-  engine
-    Game               Applies commands to the game state and returns response text. No I/O.
-    Command            Sealed interface of records, one per command.
-    CommandParser      Turns raw input into a Command. Forgiving about case and filler words.
-    Dice / RandomDice  Randomness behind an interface so tests can script rolls.
-    GameState          RUNNING, WON, DIED, QUIT.
-  model                Plain domain objects: Room, Exit, Item, Monster, Inhabitant, Player, World.
-  world
-    GnomishMines       Builds the actual map in Java code.
-```
-
 Key design rules:
 
+- `Main` is the only class that reads stdin or writes stdout.
 - `Game` must stay free of I/O. It takes a line of text and returns a string, which keeps the
   whole game testable without a terminal.
 - All randomness goes through `Dice`. Never use `Math.random()` or `new Random()` elsewhere.
@@ -76,7 +61,6 @@ When you add or change rooms, exits, items, inhabitants or monsters in `GnomishM
 
 - Java 25. Prefer records, sealed interfaces, pattern matching `switch`, `var` where it helps
   readability, and `Optional` instead of returning `null`.
-- Format with google-java-format via Spotless. Two-space indentation, 100 character lines.
 - Every public type gets a short javadoc explaining *why* it exists, not just what it is.
 - Validate constructor arguments with `Objects.requireNonNull` and `IllegalArgumentException`.
 - Do not add dependencies without asking the user first. The project intentionally has no
