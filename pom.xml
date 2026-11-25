@@ -22,6 +22,7 @@
     <!-- Dependency versions -->
     <junit.version>6.1.3</junit.version>
     <assertj.version>3.27.7</assertj.version>
+    <picocli.version>4.7.7</picocli.version>
 
     <!-- Plugin versions -->
     <maven-enforcer-plugin.version>3.7.0</maven-enforcer-plugin.version>
@@ -31,6 +32,7 @@
     <maven-surefire-plugin.version>3.6.1</maven-surefire-plugin.version>
     <maven-jar-plugin.version>3.5.1</maven-jar-plugin.version>
     <maven-install-plugin.version>3.2.0</maven-install-plugin.version>
+    <maven-shade-plugin.version>3.6.2</maven-shade-plugin.version>
     <exec-maven-plugin.version>3.7.0</exec-maven-plugin.version>
     <spotbugs-maven-plugin.version>4.10.5.0</spotbugs-maven-plugin.version>
     <spotbugs.version>4.10.5</spotbugs.version>
@@ -51,6 +53,12 @@
   </dependencyManagement>
 
   <dependencies>
+    <!-- Command line parsing. The only runtime dependency; shaded into the jar. -->
+    <dependency>
+      <groupId>info.picocli</groupId>
+      <artifactId>picocli</artifactId>
+      <version>${picocli.version}</version>
+    </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
@@ -138,9 +146,38 @@
           <archive>
             <manifest>
               <mainClass>${main.class}</mainClass>
+              <!-- Implementation-Version is the version that the game's version option prints. -->
+              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
             </manifest>
           </archive>
         </configuration>
+      </plugin>
+
+      <!-- Bundle picocli into the jar so 'java -jar' works without a classpath. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>${maven-shade-plugin.version}</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <createDependencyReducedPom>false</createDependencyReducedPom>
+              <filters>
+                <filter>
+                  <artifact>info.picocli:picocli</artifact>
+                  <excludes>
+                    <exclude>META-INF/MANIFEST.MF</exclude>
+                    <exclude>META-INF/versions/9/module-info.class</exclude>
+                  </excludes>
+                </filter>
+              </filters>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
 
       <!-- Run the game with: mvn -q compile exec:java -->
