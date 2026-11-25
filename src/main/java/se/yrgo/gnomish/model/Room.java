@@ -10,6 +10,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import se.yrgo.gnomish.text.Role;
+import se.yrgo.gnomish.text.Style;
 
 /** A location in the cave. Rooms are connected to each other through {@link Exit exits}. */
 public final class Room {
@@ -103,19 +105,45 @@ public final class Room {
 
   /** Builds the full text shown when the player enters or looks around. */
   public String describe() {
+    return describe(Style.PLAIN, "");
+  }
+
+  /**
+   * Builds the full text shown when the player enters or looks around, highlighting names with the
+   * given style.
+   *
+   * @param style how to highlight room, item, inhabitant and monster names
+   * @param treasureName the name of the treasure item, which is highlighted differently
+   */
+  public String describe(Style style, String treasureName) {
+    Objects.requireNonNull(style, "style");
+    Objects.requireNonNull(treasureName, "treasureName");
     StringBuilder text = new StringBuilder();
-    text.append("== ").append(name).append(" ==\n").append(description);
+    text.append("== ")
+        .append(style.apply(Role.ROOM_TITLE, name))
+        .append(" ==\n")
+        .append(description);
     if (!items.isEmpty()) {
       text.append("\nYou see: ")
-          .append(items.stream().map(Item::name).collect(Collectors.joining(", ")))
+          .append(
+              items.stream()
+                  .map(Item::name)
+                  .map(itemName ->
+                      style.apply(
+                          itemName.equalsIgnoreCase(treasureName) ? Role.TREASURE : Role.ITEM,
+                          itemName))
+                  .collect(Collectors.joining(", ")))
           .append('.');
     }
     for (Inhabitant person : inhabitants) {
-      text.append("\n").append(person.name()).append(" is here. ").append(person.description());
+      text.append("\n")
+          .append(style.apply(Role.PERSON, person.name()))
+          .append(" is here. ")
+          .append(person.description());
     }
     livingMonster()
         .ifPresent(m -> {
-          text.append("\n").append(m.description());
+          text.append("\n").append(style.apply(Role.MONSTER, m.description()));
           if (!guardedExits.isEmpty()) {
             text.append(" It blocks the way ")
                 .append(
