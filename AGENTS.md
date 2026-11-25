@@ -18,7 +18,7 @@ than features or performance.
 | Run a single test class      | `mvn test -Dtest=GameTest`       |
 | Fix formatting               | `mvn spotless:apply`             |
 | Explore SpotBugs findings    | `mvn spotbugs:gui`               |
-| Play the game                | `java -jar target/gnomish-mines-1.0.0-SNAPSHOT.jar [--seed N]` |
+| Play the game                | `java -jar target/gnomish-mines-1.0.0-SNAPSHOT.jar [--seed N] [--no-color]` |
 
 ## Definition of done
 
@@ -79,8 +79,8 @@ When you add or change rooms, exits, items, inhabitants or monsters in `GnomishM
 - Format with google-java-format via Spotless. Two-space indentation, 100 character lines.
 - Every public type gets a short javadoc explaining *why* it exists, not just what it is.
 - Validate constructor arguments with `Objects.requireNonNull` and `IllegalArgumentException`.
-- Do not add dependencies without asking the user first. The project intentionally has no
-  runtime dependencies.
+- Do not add dependencies without asking the user first. The only runtime dependency is picocli
+  (command line parsing), which is shaded into the jar.
 
 ## Testing conventions
 
