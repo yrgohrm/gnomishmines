@@ -23,13 +23,17 @@ mvn verify
 java -jar target/gnomish-mines-1.0.0-SNAPSHOT.jar
 ```
 
+The jar is self-contained: the build shades its only dependency, [picocli](https://picocli.info/),
+into it, so no classpath is needed.
+
 Pass `--seed <number>` to make all dice rolls repeatable, which is handy for demos:
 
 ```powershell
 java -jar target/gnomish-mines-1.0.0-SNAPSHOT.jar --seed 42
 ```
 
-You can also run it straight from Maven with `mvn -q compile exec:java`.
+Use `--help` to list all options and `--version` to show the game version. You can also run it
+straight from Maven with `mvn -q compile exec:java`.
 
 ### Colors
 
