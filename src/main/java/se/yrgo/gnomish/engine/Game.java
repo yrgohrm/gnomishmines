@@ -189,7 +189,7 @@ public final class Game {
   }
 
   private String monsterInfo(Monster monster) {
-    return monster.description()
+    return style.apply(Role.MONSTER, monster.description())
         + " (Health: "
         + healthFraction(monster.health(), monster.maxHealth())
         + ")";
