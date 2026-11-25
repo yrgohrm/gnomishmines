@@ -20,6 +20,6 @@ public final class RandomDice implements Dice {
     if (max < min) {
       throw new IllegalArgumentException("max must be >= min");
     }
-    return random.nextInt(min, max + 1);
+    return random.nextInt(min, max);
   }
 }
