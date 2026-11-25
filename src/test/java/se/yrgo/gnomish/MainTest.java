@@ -127,7 +127,7 @@ class MainTest {
 
       int exitCode = run.execute(args);
 
-      assertThat(exitCode).isEqualTo(CommandLine.ExitCode.USAGE).isEqualTo(2);
+      assertThat(exitCode).isEqualTo(CommandLine.ExitCode.USAGE);
       assertThat(run.err.toString()).contains("Usage: gnomish-mines");
       assertThat(run.out.toString()).isEmpty();
     }

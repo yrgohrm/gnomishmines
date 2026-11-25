@@ -143,6 +143,8 @@
         <artifactId>maven-jar-plugin</artifactId>
         <version>${maven-jar-plugin.version}</version>
         <configuration>
+          <!-- Always rebuild the jar, so a build without 'clean' never shades an already shaded jar. -->
+          <forceCreation>true</forceCreation>
           <archive>
             <manifest>
               <mainClass>${main.class}</mainClass>
