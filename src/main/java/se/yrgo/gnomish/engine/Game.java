@@ -1,9 +1,11 @@
 package se.yrgo.gnomish.engine;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import se.yrgo.gnomish.model.Direction;
 import se.yrgo.gnomish.model.Exit;
@@ -37,6 +39,11 @@ public final class Game {
         drop <item>              - put something down
         inventory (i)            - list what you carry
         talk <someone>           - talk to an inhabitant
+        give <item> to <someone> - give an inhabitant their requested item
+        date <someone>           - go on a date after giving their requested item
+        romance <someone>        - start a romance after dating
+        kill <target>            - cartoonishly end your adventure, dismiss a sweetheart, or fight
+                                   a monster
         attack <monster>         - fight a monster
         use / eat / drink <item> - use an item
         health                   - show your health
@@ -112,6 +119,10 @@ public final class Game {
       case Command.Drop(String target) -> drop(target);
       case Command.Inventory() -> inventory();
       case Command.Talk(String target) -> talk(target);
+      case Command.Give(String item, String target) -> give(item, target);
+      case Command.Date(String target) -> date(target);
+      case Command.Romance(String target) -> romance(target);
+      case Command.Kill(String target) -> kill(target);
       case Command.Attack(String target) -> attack(target);
       case Command.Use(String target) -> use(target);
       case Command.Status() -> healthLine();
@@ -281,6 +292,165 @@ public final class Game {
     return out.toString();
   }
 
+  private String give(String itemTarget, String target) {
+    if (itemTarget.isBlank()) {
+      return "Give what?";
+    }
+    if (target.isBlank()) {
+      return "Give it to whom?";
+    }
+    Optional<Inhabitant> maybePerson = player.location().findInhabitant(target);
+    if (maybePerson.isEmpty()) {
+      return "There is no " + target + " here to receive it.";
+    }
+
+    Inhabitant person = maybePerson.get();
+    if (!person.hasTalked()) {
+      return "Talk to " + person.name() + " first.";
+    }
+    if (person.requestedGift().isEmpty()) {
+      return person.name() + " isn't asking for a gift.";
+    }
+    if (person.hasReceivedRequestedGift()) {
+      return person.name() + " has already accepted your gift.";
+    }
+
+    Optional<Item> maybeItem = player.findItem(itemTarget);
+    if (maybeItem.isEmpty()) {
+      return "You aren't carrying any " + itemTarget + ".";
+    }
+    Item item = maybeItem.get();
+    String requestedGift = person.requestedGift().orElseThrow();
+    if (!requestedGift.equalsIgnoreCase(item.name())) {
+      return person.name() + " would prefer the " + requestedGift + ".";
+    }
+    if (!person.receiveRequestedGift(item.name())) {
+      return person.name() + " can't accept that gift.";
+    }
+
+    player.removeItem(item);
+    return "You give "
+        + person.name()
+        + " the "
+        + item.name()
+        + ". "
+        + person.name()
+        + " is delighted and agrees to a date!";
+  }
+
+  private String date(String target) {
+    if (target.isBlank()) {
+      return "Date whom?";
+    }
+    Optional<Inhabitant> maybePerson = player.location().findInhabitant(target);
+    if (maybePerson.isEmpty()) {
+      return "There is no " + target + " here to date.";
+    }
+
+    Inhabitant person = maybePerson.get();
+    if (!person.hasTalked()) {
+      return "Talk to " + person.name() + " before asking them on a date.";
+    }
+    if (person.requestedGift().isPresent() && !person.hasReceivedRequestedGift()) {
+      return person.name()
+          + " wants the "
+          + person.requestedGift().orElseThrow()
+          + " before going on a date.";
+    }
+    if (person.hasBeenDated()) {
+      return "You have already been on a date with " + person.name() + ".";
+    }
+    if (!person.startDate()) {
+      return person.name() + " isn't ready to go on a date.";
+    }
+    return person.dateResponse();
+  }
+
+  private String romance(String target) {
+    if (target.isBlank()) {
+      return "Romance whom?";
+    }
+    Optional<Inhabitant> maybePerson = player.location().findInhabitant(target);
+    if (maybePerson.isEmpty()) {
+      return "There is no " + target + " here.";
+    }
+
+    Inhabitant person = maybePerson.get();
+    if (!person.hasBeenDated()) {
+      return "Go on a date with " + person.name() + " first.";
+    }
+    if (person.isRomanced()) {
+      return "You and " + person.name() + " are already sweethearts.";
+    }
+    if (!person.startRomance()) {
+      return person.name() + " isn't ready for a romance.";
+    }
+    return person.romanceResponse();
+  }
+
+  private String kill(String target) {
+    if (target.isBlank()) {
+      return "Choose yourself, a sweetheart, or a monster.";
+    }
+    if (Set.of("me", "myself", "self", "yourself").contains(target)) {
+      player.takeDamage(player.health());
+      state = GameState.DIED;
+      return "A puff of cartoon smoke marks the end of your adventure. GAME OVER.";
+    }
+
+    Room room = player.location();
+    Optional<Inhabitant> maybePerson = room.findInhabitant(target);
+    if (maybePerson.isPresent()) {
+      Inhabitant person = maybePerson.get();
+      if (!person.isRomanceable()) {
+        return person.name() + " is not a sweetheart you can dismiss.";
+      }
+      room.removeInhabitant(person);
+      StringBuilder out =
+          new StringBuilder("A harmless puff of smoke whisks ")
+              .append(person.name())
+              .append(" offstage; their adventure is over.");
+      person
+          .giftToRecover()
+          .ifPresent(gift -> {
+            if (player.inventory().contains(gift)) {
+              out.append("\nYou already have their ").append(gift.name()).append('.');
+              return;
+            }
+            Optional<Room> giftRoom = findRoomContaining(gift);
+            if (giftRoom.isPresent()) {
+              giftRoom.get().removeItem(gift);
+              player.addItem(gift);
+              out.append("\nYou recover their ").append(gift.name()).append('.');
+            } else {
+              out.append("\nTheir ").append(gift.name()).append(" is no longer available.");
+            }
+          });
+      return out.toString();
+    }
+
+    return attack(target);
+  }
+
+  private Optional<Room> findRoomContaining(Item item) {
+    List<Room> pending = new ArrayList<>();
+    Set<Room> visited = new HashSet<>();
+    pending.add(world.start());
+    for (int index = 0; index < pending.size(); index++) {
+      Room room = pending.get(index);
+      if (visited.add(room)) {
+        if (room.items().contains(item)) {
+          return Optional.of(room);
+        }
+        room.exitDirections().stream()
+            .map(direction -> room.exit(direction).orElseThrow().target())
+            .filter(next -> !visited.contains(next))
+            .forEach(pending::add);
+      }
+    }
+    return Optional.empty();
+  }
+
   private String attack(String target) {
     Optional<Monster> maybeMonster = player.location().livingMonster();
     if (maybeMonster.isEmpty()) {
@@ -345,6 +515,9 @@ public final class Game {
       return "You aren't carrying any " + target + ".";
     }
     Item item = maybeItem.get();
+    if (item.firesTroll()) {
+      return fireTroll(item);
+    }
     if (item.isWeapon()) {
       return "You will use the " + itemName(item) + " automatically when you fight.";
     }
@@ -359,6 +532,36 @@ public final class Game {
         + style.apply(Role.HEALING, String.valueOf(healed))
         + " health. "
         + healthLine();
+  }
+
+  private String fireTroll(Item item) {
+    Room room = player.location();
+    if (room.livingMonster().isPresent()) {
+      return "You can't fire the troll gun while a monster is already here.";
+    }
+
+    player.removeItem(item);
+    List<Inhabitant> gnomes = List.copyOf(room.inhabitants());
+    gnomes.forEach(room::removeInhabitant);
+    Monster troll =
+        new Monster(
+            "troll",
+            "A huge, warty troll lumbers out of the cannon smoke.",
+            14,
+            2,
+            4,
+            Item.plain("gold coins", "A pouch of gold coins the troll carried."));
+    Direction[] guardedExits = room.exitDirections().toArray(Direction[]::new);
+    room.setMonster(troll, guardedExits);
+
+    StringBuilder out = new StringBuilder("You fire the troll gun. ");
+    if (!gnomes.isEmpty()) {
+      out.append("The troll gobbles up ");
+      out.append(gnomes.stream().map(Inhabitant::name).collect(Collectors.joining(" and ")));
+      out.append(" in one gulp. ");
+    }
+    out.append("Now you have to fight it!");
+    return out.toString();
   }
 
   private String quit() {

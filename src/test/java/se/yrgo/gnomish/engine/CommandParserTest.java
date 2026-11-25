@@ -49,8 +49,16 @@ class CommandParserTest {
   void parsesSocialAndCombatCommands() {
     assertThat(parser.parse("talk to Tink")).isEqualTo(new Command.Talk("tink"));
     assertThat(parser.parse("talk")).isEqualTo(new Command.Talk(""));
+    assertThat(parser.parse("give the crystal shard to Bramble"))
+        .isEqualTo(new Command.Give("crystal shard", "bramble"));
+    assertThat(parser.parse("give smoked fish to Pip"))
+        .isEqualTo(new Command.Give("smoked fish", "pip"));
+    assertThat(parser.parse("give rope")).isEqualTo(new Command.Give("rope", ""));
+    assertThat(parser.parse("date Tink")).isEqualTo(new Command.Date("tink"));
+    assertThat(parser.parse("romance Tink")).isEqualTo(new Command.Romance("tink"));
     assertThat(parser.parse("attack the troll")).isEqualTo(new Command.Attack("troll"));
-    assertThat(parser.parse("kill dragon")).isEqualTo(new Command.Attack("dragon"));
+    assertThat(parser.parse("kill dragon")).isEqualTo(new Command.Kill("dragon"));
+    assertThat(parser.parse("kill yourself")).isEqualTo(new Command.Kill("yourself"));
     assertThat(parser.parse("eat mushroom")).isEqualTo(new Command.Use("mushroom"));
     assertThat(parser.parse("drink potion")).isEqualTo(new Command.Use("potion"));
   }

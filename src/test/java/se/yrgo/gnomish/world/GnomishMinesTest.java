@@ -46,9 +46,10 @@ class GnomishMinesTest {
     World first = GnomishMines.create();
     World second = GnomishMines.create();
 
+    assertThat(first.start().items()).extracting("name").contains("troll gun");
     first.start().removeItem(first.start().items().getFirst());
 
-    assertThat(second.start().items()).hasSize(2);
+    assertThat(second.start().items()).hasSize(3);
   }
 
   @Test
@@ -95,6 +96,67 @@ class GnomishMinesTest {
 
     assertThat(game.state()).isEqualTo(GameState.WON);
     assertThat(game.inventoryNames()).contains("mountain gem", "rune axe", "iron sword", "rope");
+  }
+
+  @Test
+  void allFourGnomesCanBeDatedAndRomancedWithTheirRequestedGifts() {
+    Game game = new Game(GnomishMines.create(), LUCKY);
+    String[] openingCommands = {
+      "take all",
+      "north",
+      "east",
+      "talk bramble",
+      "north",
+      "talk tink",
+      "south",
+      "west",
+      "west",
+      "attack spider",
+      "take mushroom",
+      "north",
+      "take all",
+      "south",
+      "east",
+      "east",
+      "down",
+      "talk pip"
+    };
+
+    for (String command : openingCommands) {
+      game.handle(command);
+    }
+
+    assertThat(game.handle("give mushroom to pip")).contains("Pip is delighted");
+    assertThat(game.handle("date pip")).contains("Pip takes you out on the lake");
+    assertThat(game.handle("romance pip")).contains("Pip squeezes your hand");
+    assertThat(game.inventoryNames()).doesNotContain("mushroom");
+
+    game.handle("west");
+    game.handle("talk morg");
+    assertThat(game.handle("give smoked fish to morg")).contains("Morg is delighted");
+    assertThat(game.handle("date morg")).contains("Morg shares a quiet campfire meal");
+    assertThat(game.handle("romance morg")).contains("Morg takes your hand");
+
+    game.handle("up");
+    game.handle("east");
+    game.handle("attack troll");
+    game.handle("attack troll");
+    game.handle("take gold coins");
+    game.handle("east");
+    game.handle("take crystal shard");
+    game.handle("west");
+    game.handle("west");
+    game.handle("south");
+    game.handle("east");
+
+    assertThat(game.handle("give crystal shard to bramble")).contains("Bramble is delighted");
+    assertThat(game.handle("date bramble")).contains("Bramble shares old mine stories");
+    assertThat(game.handle("romance bramble")).contains("Bramble takes your hand");
+
+    game.handle("north");
+    assertThat(game.handle("give gold coins to tink")).contains("Tink is delighted");
+    assertThat(game.handle("date tink")).contains("Tink invites you to watch the forge");
+    assertThat(game.handle("romance tink")).contains("Tink smiles");
   }
 
   @Test

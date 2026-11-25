@@ -265,6 +265,210 @@ class GameTest {
   }
 
   @Nested
+  class Relationships {
+
+    @Test
+    void requiresTalkingAndTheRequestedGiftBeforeDatingAndRomancing() {
+      hall.addInhabitant(
+          new Inhabitant(
+              "Ada",
+              "A friendly miner.",
+              List.of("I would like a rope."),
+              null,
+              "rope",
+              "You share a pleasant afternoon.",
+              "Ada takes your hand."));
+      Game game = newGame();
+
+      assertThat(game.handle("date ada")).isEqualTo("Talk to Ada before asking them on a date.");
+      assertThat(game.handle("romance ada")).isEqualTo("Go on a date with Ada first.");
+
+      game.handle("take rope");
+      game.handle("take apple");
+      assertThat(game.handle("give rope to ada")).isEqualTo("Talk to Ada first.");
+      game.handle("talk ada");
+
+      assertThat(game.handle("date ada")).isEqualTo("Ada wants the rope before going on a date.");
+      assertThat(game.handle("give apple to ada")).isEqualTo("Ada would prefer the rope.");
+      assertThat(game.inventoryNames()).containsExactly("rope", "apple");
+      assertThat(game.handle("give rope to ada"))
+          .isEqualTo("You give Ada the rope. Ada is delighted and agrees to a date!");
+      assertThat(game.inventoryNames()).containsExactly("apple");
+
+      assertThat(game.handle("date ada")).isEqualTo("You share a pleasant afternoon.");
+      assertThat(game.handle("date ada")).isEqualTo("You have already been on a date with Ada.");
+      assertThat(game.handle("romance ada")).isEqualTo("Ada takes your hand.");
+      assertThat(game.handle("romance ada")).isEqualTo("You and Ada are already sweethearts.");
+    }
+
+    @Test
+    void relationshipsAreIndependentAndOneGiftUnlocksOnlyItsRecipient() {
+      hall.addInhabitant(
+          new Inhabitant(
+              "Ada",
+              "A friendly miner.",
+              List.of("I would like a rope."),
+              null,
+              "rope",
+              "You share a pleasant afternoon.",
+              "Ada takes your hand."));
+      hall.addInhabitant(
+          new Inhabitant(
+              "Bea",
+              "A cheerful miner.",
+              List.of("I would like a rope."),
+              null,
+              "rope",
+              "You share a pleasant afternoon.",
+              "Bea takes your hand."));
+      hall.addInhabitant(
+          new Inhabitant(
+              "Cal",
+              "A cheerful miner.",
+              List.of("I would like an apple."),
+              null,
+              "apple",
+              "You share a pleasant afternoon.",
+              "Cal takes your hand."));
+      Game game = newGame();
+      game.handle("take all");
+      game.handle("talk ada");
+      game.handle("talk bea");
+      game.handle("talk cal");
+
+      game.handle("give rope to ada");
+      game.handle("give apple to cal");
+
+      assertThat(game.handle("give rope to bea")).isEqualTo("You aren't carrying any rope.");
+      assertThat(game.handle("date bea")).isEqualTo("Bea wants the rope before going on a date.");
+      assertThat(game.handle("date ada")).isEqualTo("You share a pleasant afternoon.");
+      assertThat(game.handle("romance ada")).isEqualTo("Ada takes your hand.");
+      assertThat(game.handle("date cal")).isEqualTo("You share a pleasant afternoon.");
+      assertThat(game.handle("romance cal")).isEqualTo("Cal takes your hand.");
+    }
+
+    @Test
+    void dismissingSweetheartRecoversTheirGiftFromTheWorld() {
+      Item charm = Item.plain("charm", "A tiny lucky charm.");
+      hall.addInhabitant(
+          new Inhabitant(
+              "Ada",
+              "A friendly miner.",
+              List.of("Hello!"),
+              charm,
+              "rope",
+              "You share a pleasant afternoon.",
+              "Ada takes your hand."));
+      Game game = newGame();
+      game.handle("talk ada");
+      game.handle("drop charm");
+      game.handle("north");
+      game.handle("south");
+
+      String result = game.handle("kill ada");
+
+      assertThat(result).contains("Ada offstage").contains("You recover their charm.");
+      assertThat(game.inventoryNames()).contains("charm");
+      assertThat(game.handle("look")).doesNotContain("Ada is here");
+    }
+
+    @Test
+    void dismissingSweetheartDoesNotDuplicateGiftAlreadyCarried() {
+      Item charm = Item.plain("charm", "A tiny lucky charm.");
+      hall.addInhabitant(
+          new Inhabitant(
+              "Ada",
+              "A friendly miner.",
+              List.of("Hello!"),
+              charm,
+              "rope",
+              "You share a pleasant afternoon.",
+              "Ada takes your hand."));
+      Game game = newGame();
+      game.handle("talk ada");
+
+      String result = game.handle("kill ada");
+
+      assertThat(result).contains("You already have their charm.");
+      assertThat(game.inventoryNames()).containsExactly("charm");
+    }
+
+    @Test
+    void dismissingSweetheartDoesNotRestoreConsumedGift() {
+      Item treat = Item.consumable("treat", "A sweet treat.", 1);
+      hall.addInhabitant(
+          new Inhabitant(
+              "Ada",
+              "A friendly miner.",
+              List.of("Hello!"),
+              treat,
+              "rope",
+              "You share a pleasant afternoon.",
+              "Ada takes your hand."));
+      Game game = newGame();
+      game.handle("talk ada");
+      game.handle("eat treat");
+
+      String result = game.handle("kill ada");
+
+      assertThat(result).contains("no longer available");
+      assertThat(game.inventoryNames()).doesNotContain("treat");
+    }
+  }
+
+  @Nested
+  class SpecialItems {
+
+    @Test
+    void trollGunEatsLocalGnomesAndStartsACombatEncounter() {
+      hall.addItem(Item.trollGun());
+      hall.addItem(Item.weapon("big sword", "A comically large sword.", 20));
+      hall.addInhabitant(
+          new Inhabitant(
+              "Ada",
+              "A friendly miner.",
+              List.of("Hello!"),
+              null,
+              "rope",
+              "You share a pleasant afternoon.",
+              "Ada takes your hand."));
+      Game game = newGame(new ScriptedDice(1));
+      game.handle("take troll gun");
+      game.handle("take big sword");
+
+      String result = game.handle("use troll gun");
+
+      assertThat(result).contains("gobbles up").contains("Ada").contains("fight it");
+      assertThat(game.inventoryNames()).doesNotContain("troll gun");
+      assertThat(game.handle("look")).doesNotContain("Ada is here");
+      assertThat(game.handle("kill troll")).contains("The troll is defeated!");
+    }
+
+    @Test
+    void trollGunCannotBeFiredWhileAnotherMonsterIsPresent() {
+      hall.addItem(Item.trollGun());
+      Game game = newGame();
+      game.handle("take troll gun");
+      hall.setMonster(new Monster("wolf", "A wolf.", 5, 1, 1));
+
+      assertThat(game.handle("use troll gun")).contains("monster is already here");
+      assertThat(game.inventoryNames()).contains("troll gun");
+    }
+
+    @Test
+    void selfDirectedKillEndsTheGameWithAComicMessage() {
+      Game game = newGame();
+
+      String result = game.handle("kill me");
+
+      assertThat(result).contains("cartoon smoke").contains("GAME OVER");
+      assertThat(game.state()).isEqualTo(GameState.DIED);
+      assertThat(game.playerHealth()).isZero();
+      assertThat(game.handle("look")).isEqualTo("The game is over.");
+    }
+  }
+
+  @Nested
   class Combat {
 
     @Test

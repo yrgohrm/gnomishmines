@@ -106,12 +106,20 @@ Use them with `eat`, `drink` or `use`. Using an item never gives a monster a fre
 
 Each character says something new every time you talk to them. Some give a gift the first time.
 
-| Character | Where            | Gift        | What they tell you                                   |
-| --------- | ---------------- | ----------- | ---------------------------------------------------- |
-| Bramble   | Gnome Village    | -           | The story, and hints about Tink, the axe and the rope |
-| Tink      | Smithy           | iron sword  | Some encouragement                                   |
-| Morg      | Hermit's Hollow  | rune axe    | The troll is strong but stupid, the dragon is not    |
-| Pip       | Underground Lake | smoked fish | The hermit is friendly                               |
+| Character | Where            | Gift you get | Gift they want | What they tell you                                   |
+| --------- | ---------------- | ------------ | -------------- | ---------------------------------------------------- |
+| Bramble   | Gnome Village    | -            | crystal shard  | The story, and hints about Tink, the axe and the rope |
+| Tink      | Smithy           | iron sword   | gold coins     | Some encouragement                                   |
+| Morg      | Hermit's Hollow  | rune axe     | smoked fish    | The troll is strong but stupid, the dragon is not    |
+| Pip       | Underground Lake | smoked fish  | mushroom       | The hermit is friendly                               |
+
+### Dating and romance
+
+Talk to a gnome to learn what they want. Give them that item while you are together; the gift is
+consumed and unlocks dating with that gnome only. You must date them before starting a romance.
+Give, date, and romance commands work only when the gnome is in the room. Relationships are
+independent, so you can romance all four. Keep scenes wholesome and enjoy their character-specific
+moments.
 
 ### Monsters
 

@@ -26,6 +26,18 @@ public sealed interface Command {
   /** Talk to an inhabitant. An empty target means "whoever is here". */
   record Talk(String target) implements Command {}
 
+  /** Give an item to an inhabitant. */
+  record Give(String item, String target) implements Command {}
+
+  /** Ask an inhabitant on a date. */
+  record Date(String target) implements Command {}
+
+  /** Begin a romance with an inhabitant after dating them. */
+  record Romance(String target) implements Command {}
+
+  /** End the player's adventure, dismiss a romanceable inhabitant, or attack a monster. */
+  record Kill(String target) implements Command {}
+
   /** Attack a monster. An empty target means "whatever is here". */
   record Attack(String target) implements Command {}
 

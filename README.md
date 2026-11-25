@@ -65,19 +65,23 @@ Windows Terminal, or pass `--no-color`.
 
 ## How to play
 
-| Command                                   | What it does                         |
-| ----------------------------------------- | ------------------------------------ |
+| Command                                                   | What it does                                  |
+| --------------------------------------------------------- | --------------------------------------------- |
 | `north`, `south`, `east`, `west`, `up`, `down` (or `n`, `s`, `e`, `w`, `u`, `d`) | Travel |
-| `look`                                    | Describe your surroundings           |
-| `examine <thing>`                         | Look closely at something            |
-| `take <item>` / `take all`                | Pick things up (inventory is unlimited) |
-| `drop <item>`                             | Put something down                   |
-| `inventory` (`i`)                         | List what you carry                  |
-| `talk <someone>`                          | Talk to an inhabitant                |
-| `attack <monster>`                        | Fight a monster                      |
-| `use` / `eat` / `drink <item>`            | Use an item, e.g. to heal            |
-| `health`                                  | Show your health                     |
-| `help`, `quit`                            | Show help, give up                   |
+| `look`                                                    | Describe your surroundings                   |
+| `examine <thing>`                                         | Look closely at something                    |
+| `take <item>` / `take all`                                | Pick things up (inventory is unlimited)      |
+| `drop <item>`                                              | Put something down                           |
+| `inventory` (`i`)                                          | List what you carry                          |
+| `talk <someone>`                                           | Talk to an inhabitant                        |
+| `give <item> to <someone>`                                 | Give an inhabitant their requested item      |
+| `date <someone>`                                           | Go on a date after giving their requested item |
+| `romance <someone>`                                        | Start a romance after dating                 |
+| `kill <target>`                                            | End your run, dismiss a sweetheart, or fight a monster |
+| `attack <monster>`                                         | Fight a monster                              |
+| `use` / `eat` / `drink <item>`                             | Use an item, e.g. to heal                    |
+| `health`                                                   | Show your health                             |
+| `help`, `quit`                                             | Show help, give up                           |
 
 ### Rules
 
@@ -88,6 +92,12 @@ Windows Terminal, or pass `--no-color`.
 - Some exits are dangerous. Slippery slopes always hurt, and some drops are deadly unless you
   carry the right equipment.
 - Inhabitants say something new each time you talk to them, and some give you a gift.
+- The four gnomes welcome wholesome, non-exclusive romances. Talk to a gnome, give them the item
+  they request, then date them before starting a romance. The item is consumed and only unlocks
+  that gnome. Give, date, and romance commands require the gnome to be in the room.
+- The troll gun starts at the entrance. Firing it uses up the gun, sends any gnomes in the room
+  offstage, and summons a troll you must fight. `kill <name>` also dismisses a romanceable gnome
+  in your room; any gifted item still in the world can be recovered without making a duplicate.
 - You win by reaching the mine entrance while carrying the mountain gem.
 
 ## Project layout

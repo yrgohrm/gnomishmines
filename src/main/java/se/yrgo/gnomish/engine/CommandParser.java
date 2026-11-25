@@ -18,6 +18,12 @@ public final class CommandParser {
 
   /** Parses one line of input. Never returns {@code null}. */
   public Command parse(String input) {
+    String normalized = input.trim().toLowerCase(Locale.ROOT);
+    List<String> rawWords = normalized.isEmpty() ? List.of() : List.of(normalized.split("\\s+"));
+    if (!rawWords.isEmpty() && rawWords.getFirst().equals("give")) {
+      return parseGive(rawWords);
+    }
+
     List<String> words = words(input);
     if (words.isEmpty()) {
       return new Command.Unknown(input);
@@ -43,13 +49,30 @@ public final class CommandParser {
       case "drop" -> new Command.Drop(rest);
       case "inventory", "inv", "i" -> new Command.Inventory();
       case "talk", "speak", "ask" -> new Command.Talk(rest);
-      case "attack", "fight", "kill", "hit" -> new Command.Attack(rest);
+      case "date" -> new Command.Date(rest);
+      case "romance" -> new Command.Romance(rest);
+      case "kill" -> new Command.Kill(rest);
+      case "attack", "fight", "hit" -> new Command.Attack(rest);
       case "use", "eat", "drink" -> new Command.Use(rest);
       case "health", "status", "hp" -> new Command.Status();
       case "help", "?" -> new Command.Help();
       case "quit", "exit", "q" -> new Command.Quit();
       default -> new Command.Unknown(input);
     };
+  }
+
+  private static Command parseGive(List<String> rawWords) {
+    int separator = rawWords.subList(1, rawWords.size()).indexOf("to") + 1;
+    if (separator == 0) {
+      return new Command.Give(cleanWords(rawWords.subList(1, rawWords.size())), "");
+    }
+    return new Command.Give(
+        cleanWords(rawWords.subList(1, separator)),
+        cleanWords(rawWords.subList(separator + 1, rawWords.size())));
+  }
+
+  private static String cleanWords(List<String> words) {
+    return String.join(" ", words.stream().filter(word -> !FILLER_WORDS.contains(word)).toList());
   }
 
   private static List<String> words(String input) {

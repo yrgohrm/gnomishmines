@@ -106,6 +106,7 @@ public final class GnomishMines {
 
     entrance
         .connect(NORTH, Exit.open(tunnel))
+        .addItem(Item.trollGun())
         .addItem(Item.weapon("pickaxe", "A rusty but sturdy pickaxe. Better than fists.", 2))
         .addItem(Item.consumable("bread", "A crusty loaf. Restores 3 health.", 3));
 
@@ -129,12 +130,17 @@ public final class GnomishMines {
                 "An ancient gnome with a beard down to his boots.",
                 List.of(
                     "A dragon stole the Heart of the Mountain, our mountain gem! Bring it back"
-                        + " to the surface and the curse on these mines will lift.",
+                        + " to the surface and the curse on these mines will lift. A crystal shard"
+                        + " from the cavern would make a fine keepsake.",
                     "You'll never beat the dragon with your bare hands. Visit Tink in the"
                         + " smithy, and they say the hermit at the bottom of the chasm keeps"
                         + " an old dwarven axe.",
                     "Only a fool jumps into the chasm. Find a rope! I think there was one in"
-                        + " the old storeroom past the grotto.")));
+                        + " the old storeroom past the grotto."),
+                null,
+                "crystal shard",
+                "Bramble shares old mine stories with you by lantern light.",
+                "Bramble takes your hand and says they hope to see you again soon."));
 
     smithy
         .connect(SOUTH, Exit.open(village))
@@ -143,9 +149,13 @@ public final class GnomishMines {
                 "Tink",
                 "A soot-covered gnome swinging a hammer twice her size.",
                 List.of(
-                    "Off to fight the dragon? Ha! Take this, you'll need it more than me.",
+                    "Off to fight the dragon? Ha! Take this, you'll need it more than me."
+                        + " Troll gold would help me buy supplies for the smithy.",
                     "Keep the blade sharp and your head down."),
-                Item.weapon("iron sword", "A short but well balanced gnomish blade.", 4)));
+                Item.weapon("iron sword", "A short but well balanced gnomish blade.", 4),
+                "gold coins",
+                "Tink invites you to watch the forge glow as you talk together.",
+                "Tink smiles and tells you that the best things are made together."));
 
     grotto
         .connect(EAST, Exit.open(tunnel))
@@ -186,9 +196,13 @@ public final class GnomishMines {
                 "A wild-haired hermit warming his hands over a small fire.",
                 List.of(
                     "Visitors! Nobody visits Morg. Here, take my old axe. It has slain a"
-                        + " dragon before, it can do it again.",
+                        + " dragon before, it can do it again. Smoked fish from Pip would make"
+                        + " this camp feel like a feast.",
                     "The troll on the bridge is strong but stupid. The dragon is neither."),
-                Item.weapon("rune axe", "A heavy dwarven axe covered in glowing runes.", 6)))
+                Item.weapon("rune axe", "A heavy dwarven axe covered in glowing runes.", 6),
+                "smoked fish",
+                "Morg shares a quiet campfire meal and stories of the old mines.",
+                "Morg takes your hand and promises to save you a place by the fire."))
         .addItem(Item.consumable("potion", "A red healing potion. Restores 10 health.", 10));
 
     lake.connect(WEST, Exit.open(hollow))
@@ -196,11 +210,15 @@ public final class GnomishMines {
         .addInhabitant(
             new Inhabitant(
                 "Pip",
-                "A young gnome dangling a fishing line into the water.",
+                "A grown gnome dangling a fishing line into the water.",
                 List.of(
-                    "Shh, you'll scare the fish! Oh, you look hungry. Have one of mine.",
+                    "Shh, you'll scare the fish! Oh, you look hungry. Have one of mine."
+                        + " I do miss the glowing mushrooms from the grotto.",
                     "The hermit to the west is friendly, honest. Just a bit smelly."),
-                Item.consumable("smoked fish", "A delicious smoked fish. Restores 6 health.", 6)));
+                Item.consumable("smoked fish", "A delicious smoked fish. Restores 6 health.", 6),
+                "mushroom",
+                "Pip takes you out on the lake to fish and trade stories.",
+                "Pip squeezes your hand and asks you to join them on the lake again."));
 
     bridge
         .connect(WEST, Exit.open(chasmEdge))

@@ -82,6 +82,10 @@ public final class Room {
     return inhabitants.stream().filter(person -> person.matches(query)).findFirst();
   }
 
+  public boolean removeInhabitant(Inhabitant inhabitant) {
+    return inhabitants.remove(Objects.requireNonNull(inhabitant));
+  }
+
   /**
    * Places a monster in the room. While the monster is alive it stops the player from using the
    * {@code guarded} exits and from picking anything up.
