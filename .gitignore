@@ -14,5 +14,6 @@ target/
 .DS_Store
 Thumbs.db
 
-# Local Claude Code settings
+# Local Claude Code settings and session worktrees
 .claude/settings.local.json
+.claude/worktrees/
