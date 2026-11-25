@@ -13,6 +13,8 @@ import se.yrgo.gnomish.model.Monster;
 import se.yrgo.gnomish.model.Player;
 import se.yrgo.gnomish.model.Room;
 import se.yrgo.gnomish.model.World;
+import se.yrgo.gnomish.text.Role;
+import se.yrgo.gnomish.text.Style;
 
 /**
  * The game engine. Feed it lines of player input with {@link #handle(String)} and it returns the
@@ -45,12 +47,20 @@ public final class Game {
   private final World world;
   private final Player player;
   private final Dice dice;
+  private final Style style;
   private final CommandParser parser = new CommandParser();
   private GameState state = GameState.RUNNING;
 
+  /** Creates a game whose output is plain text without any highlighting. */
   public Game(World world, Dice dice) {
+    this(world, dice, Style.PLAIN);
+  }
+
+  /** Creates a game that highlights names and numbers in its output with the given style. */
+  public Game(World world, Dice dice, Style style) {
     this.world = Objects.requireNonNull(world, "world");
     this.dice = Objects.requireNonNull(dice, "dice");
+    this.style = Objects.requireNonNull(style, "style");
     this.player = new Player(world.start(), world.maxHealth());
   }
 
@@ -59,10 +69,10 @@ public final class Game {
     return "Welcome to the GNOMISH MINES!\n"
         + "Deep below the mountain, a dragon has stolen the gnomes' most precious treasure,\n"
         + "the "
-        + world.treasure()
+        + style.apply(Role.TREASURE, world.treasure())
         + ". Find it and carry it back out of the mines.\n"
         + "Type 'help' for a list of commands.\n\n"
-        + player.location().describe();
+        + describeRoom();
   }
 
   public GameState state() {
@@ -96,7 +106,7 @@ public final class Game {
     }
     return switch (parser.parse(input)) {
       case Command.Go(Direction direction) -> go(direction);
-      case Command.Look() -> player.location().describe();
+      case Command.Look() -> describeRoom();
       case Command.Examine(String target) -> examine(target);
       case Command.Take(String target) -> take(target);
       case Command.Drop(String target) -> drop(target);
@@ -119,7 +129,7 @@ public final class Game {
       return "You can't go " + direction.displayName() + " from here.";
     }
     if (here.isGuarded(direction)) {
-      return "The " + here.livingMonster().orElseThrow().name() + " blocks your way!";
+      return "The " + monsterName(here.livingMonster().orElseThrow()) + " blocks your way!";
     }
 
     Exit exit = maybeExit.get();
@@ -143,20 +153,24 @@ public final class Game {
     if (!player.isAlive()) {
       return die(out);
     }
-    out.add(player.location().describe());
+    out.add(describeRoom());
     if (player.location() == world.goal() && player.hasItem(world.treasure())) {
       state = GameState.WON;
       out.add(
           "\nYou step out into the daylight carrying the "
-              + world.treasure()
-              + ". The gnomes will sing of you for a hundred years. YOU WIN!");
+              + style.apply(Role.TREASURE, world.treasure())
+              + ". The gnomes will sing of you for a hundred years. "
+              + style.apply(Role.VICTORY, "YOU WIN!"));
     }
     return String.join("\n", out);
   }
 
   private String fall(int damage) {
     player.takeDamage(damage);
-    return "You take " + damage + " damage from the fall. " + healthLine();
+    return "You take "
+        + style.apply(Role.DAMAGE_TAKEN, String.valueOf(damage))
+        + " damage from the fall. "
+        + healthLine();
   }
 
   private String examine(String target) {
@@ -175,11 +189,9 @@ public final class Game {
   }
 
   private String monsterInfo(Monster monster) {
-    return monster.description()
+    return style.apply(Role.MONSTER, monster.description())
         + " (Health: "
-        + monster.health()
-        + "/"
-        + monster.maxHealth()
+        + healthFraction(monster.health(), monster.maxHealth())
         + ")";
   }
 
@@ -190,7 +202,7 @@ public final class Game {
     Room here = player.location();
     Optional<Monster> guard = here.livingMonster();
     if (guard.isPresent()) {
-      return "The " + guard.get().name() + " won't let you touch anything!";
+      return "The " + monsterName(guard.get()) + " won't let you touch anything!";
     }
     if (target.equals("all")) {
       if (here.items().isEmpty()) {
@@ -198,12 +210,12 @@ public final class Game {
       }
       List<Item> taken = List.copyOf(here.items());
       taken.forEach(this::moveToInventory);
-      return "Taken: " + taken.stream().map(Item::name).collect(Collectors.joining(", ")) + ".";
+      return "Taken: " + taken.stream().map(this::itemName).collect(Collectors.joining(", ")) + ".";
     }
     return here.findItem(target)
         .map(item -> {
           moveToInventory(item);
-          return "Taken: " + item.name() + ".";
+          return "Taken: " + itemName(item) + ".";
         })
         .orElse("There is no " + target + " here.");
   }
@@ -222,7 +234,7 @@ public final class Game {
         .map(item -> {
           player.removeItem(item);
           player.location().addItem(item);
-          return "Dropped: " + item.name() + ".";
+          return "Dropped: " + itemName(item) + ".";
         })
         .orElse("You aren't carrying any " + target + ".");
   }
@@ -232,7 +244,7 @@ public final class Game {
       return "You are empty-handed.";
     }
     return "You are carrying: "
-        + player.inventory().stream().map(Item::name).collect(Collectors.joining(", "))
+        + player.inventory().stream().map(this::itemName).collect(Collectors.joining(", "))
         + ".";
   }
 
@@ -255,13 +267,16 @@ public final class Game {
 
     Inhabitant inhabitant = person.get();
     StringBuilder out = new StringBuilder();
-    out.append(inhabitant.name()).append(" says: \"").append(inhabitant.talk()).append('"');
+    out.append(personName(inhabitant))
+        .append(" says: \"")
+        .append(style.apply(Role.SPEECH, inhabitant.talk()))
+        .append('"');
     inhabitant
         .takeGift()
         .ifPresent(gift -> {
           player.addItem(gift);
-          out.append("\n").append(inhabitant.name()).append(" gives you the ");
-          out.append(gift.name()).append('.');
+          out.append("\n").append(personName(inhabitant)).append(" gives you the ");
+          out.append(itemName(gift)).append('.');
         });
     return out.toString();
   }
@@ -283,19 +298,19 @@ public final class Game {
     monster.takeDamage(damage);
     out.add(
         "You strike the "
-            + monster.name()
-            + weapon.map(w -> " with your " + w.name()).orElse(" with your bare fists")
+            + monsterName(monster)
+            + weapon.map(w -> " with your " + itemName(w)).orElse(" with your bare fists")
             + " for "
-            + damage
+            + style.apply(Role.DAMAGE_DEALT, String.valueOf(damage))
             + " damage.");
 
     if (!monster.isAlive()) {
-      out.add("The " + monster.name() + " is defeated!");
+      out.add("The " + monsterName(monster) + " is defeated!");
       monster
           .loot()
           .ifPresent(loot -> {
             player.location().addItem(loot);
-            out.add("It dropped the " + loot.name() + ".");
+            out.add("It dropped the " + itemName(loot) + ".");
           });
       return String.join("\n", out);
     }
@@ -304,15 +319,16 @@ public final class Game {
     player.takeDamage(counter);
     out.add(
         "The "
-            + monster.name()
+            + monsterName(monster)
             + " hits back for "
-            + counter
+            + style.apply(Role.DAMAGE_TAKEN, String.valueOf(counter))
             + " damage. "
             + healthLine()
             + " The "
-            + monster.name()
+            + monsterName(monster)
             + " has "
-            + monster.health()
+            + style.apply(
+                healthRole(monster.health(), monster.maxHealth()), String.valueOf(monster.health()))
             + " health left.");
     if (!player.isAlive()) {
       return die(out);
@@ -330,14 +346,19 @@ public final class Game {
     }
     Item item = maybeItem.get();
     if (item.isWeapon()) {
-      return "You will use the " + item.name() + " automatically when you fight.";
+      return "You will use the " + itemName(item) + " automatically when you fight.";
     }
     if (!item.isConsumable()) {
-      return "You can't think of a way to use the " + item.name() + " right now.";
+      return "You can't think of a way to use the " + itemName(item) + " right now.";
     }
     player.removeItem(item);
     int healed = player.heal(item.healing());
-    return "You consume the " + item.name() + " and recover " + healed + " health. " + healthLine();
+    return "You consume the "
+        + itemName(item)
+        + " and recover "
+        + style.apply(Role.HEALING, String.valueOf(healed))
+        + " health. "
+        + healthLine();
   }
 
   private String quit() {
@@ -347,12 +368,44 @@ public final class Game {
 
   private String die(List<String> out) {
     state = GameState.DIED;
-    out.add("You have died. GAME OVER.");
+    out.add("You have died. " + style.apply(Role.DEFEAT, "GAME OVER."));
     return String.join("\n", out);
   }
 
   private String healthLine() {
-    return "(Health: " + player.health() + "/" + player.maxHealth() + ")";
+    return "(Health: " + healthFraction(player.health(), player.maxHealth()) + ")";
+  }
+
+  /** Formats "health/max", colored by how much of the maximum is left. */
+  private String healthFraction(int health, int max) {
+    return style.apply(healthRole(health, max), health + "/" + max);
+  }
+
+  private static Role healthRole(int health, int max) {
+    if (health * 2 > max) {
+      return Role.HEALTH_GOOD;
+    }
+    if (health * 4 > max) {
+      return Role.HEALTH_LOW;
+    }
+    return Role.HEALTH_CRITICAL;
+  }
+
+  private String describeRoom() {
+    return player.location().describe(style, world.treasure());
+  }
+
+  private String itemName(Item item) {
+    Role role = item.name().equalsIgnoreCase(world.treasure()) ? Role.TREASURE : Role.ITEM;
+    return style.apply(role, item.name());
+  }
+
+  private String monsterName(Monster monster) {
+    return style.apply(Role.MONSTER, monster.name());
+  }
+
+  private String personName(Inhabitant inhabitant) {
+    return style.apply(Role.PERSON, inhabitant.name());
   }
 
   private static void addIfPresent(List<String> out, String message) {

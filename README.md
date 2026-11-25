@@ -31,6 +31,34 @@ java -jar target/gnomish-mines-1.0.0-SNAPSHOT.jar --seed 42
 
 You can also run it straight from Maven with `mvn -q compile exec:java`.
 
+### Colors
+
+In an interactive terminal the game highlights important words with ANSI colors:
+
+| What                                    | Color        |
+| --------------------------------------- | ------------ |
+| Room titles                             | bold         |
+| People you can talk to                  | cyan         |
+| Items                                   | yellow       |
+| The mountain gem                        | bold magenta |
+| Monsters                                | bold red     |
+| Damage you deal, healing                | green        |
+| Damage you take                         | red          |
+| Health (good / low / critical)          | green / yellow / bold red |
+| What inhabitants say                    | italic       |
+| Winning / dying                         | bold green / bold red |
+
+Colors are turned off automatically when the output is not an interactive terminal (for example
+when input or output is piped or redirected), when the `NO_COLOR` environment variable is set to
+a non-empty value, or when you pass `--no-color`:
+
+```powershell
+java -jar target/gnomish-mines-1.0.0-SNAPSHOT.jar --seed 42 --no-color
+```
+
+The legacy Windows console host may show raw escape codes such as `←[36m` instead of colors. Use
+Windows Terminal, or pass `--no-color`.
+
 ## How to play
 
 | Command                                   | What it does                         |
@@ -65,6 +93,7 @@ src/main/java/se/yrgo/gnomish/
   Main.java              Terminal entry point (the only class doing I/O)
   engine/                Game loop, command parser, dice
   model/                 Rooms, exits, items, monsters, inhabitants, player
+  text/                  Text styles, e.g. ANSI colors for the terminal
   world/GnomishMines.java  The game map, built in plain Java
 src/test/java/...        JUnit 6 + AssertJ tests
 ```
